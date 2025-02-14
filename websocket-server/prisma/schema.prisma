@@ -1,0 +1,69 @@
+
+datasource db {
+  provider = "postgresql" // You can adjust the provider based on your needs
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Status {
+  UP
+  DOWN
+}
+
+model User {
+  id            String         @id @default(uuid())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  email         String         @unique
+  monitors      Monitor[]
+  notifications Notification[]
+}
+
+model Monitor {
+  id        String        @id @default(uuid())
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  name      String
+  url       String
+  timeout   Int          @default(5) // timeout in seconds
+  isActive  Boolean      @default(true)
+  status    Status?
+  lastCheck DateTime?
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  events    Event[]
+  webhook   Webhook?
+  notifications Notification[]
+}
+
+model Event {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  status    Status
+  monitorId String
+  monitor   Monitor  @relation(fields: [monitorId], references: [id])
+}
+
+model Webhook {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  url       String
+  message   Json     // Stores up/down message templates
+  monitorId String   @unique
+  monitor   Monitor  @relation(fields: [monitorId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  message   String
+  status    Status
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  monitorId String
+  monitor   Monitor  @relation(fields: [monitorId], references: [id])
+}
