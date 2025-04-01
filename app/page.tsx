@@ -4,9 +4,33 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Activity, Plus, Globe, Clock, Wifi, WifiOff, Trash2, Edit, History } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  Activity,
+  Plus,
+  Globe,
+  Clock,
+  Wifi,
+  WifiOff,
+  Trash2,
+  Edit,
+  History,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
@@ -32,7 +56,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useMonitorWebSocket } from '@/hooks/useMonitorWebSocket';
+import { useMonitorWebSocket } from "@/hooks/useMonitorWebSocket";
 
 export default function Home() {
   const { data: session } = useSession();
@@ -42,7 +66,13 @@ export default function Home() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isEventLogOpen, setIsEventLogOpen] = useState(false);
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useMonitorWebSocket((updatedMonitor) => {
@@ -88,13 +118,19 @@ export default function Home() {
           ...data,
           interval: parseInt(data.interval || "60"),
           timeout: parseInt(data.timeout || "30"),
-          webhook: data.webhook?.url ? {
-            url: data.webhook.url,
-            message: {
-              up: JSON.parse(data.webhook.message?.up || '{"message": "Online"}'),
-              down: JSON.parse(data.webhook.message?.down || '{"message": "Offline"}')
-            }
-          } : undefined
+          webhook: data.webhook?.url
+            ? {
+                url: data.webhook.url,
+                message: {
+                  up: JSON.parse(
+                    data.webhook.message?.up || '{"message": "Online"}'
+                  ),
+                  down: JSON.parse(
+                    data.webhook.message?.down || '{"message": "Offline"}'
+                  ),
+                },
+              }
+            : undefined,
         }),
       });
 
@@ -125,13 +161,19 @@ export default function Home() {
           ...data,
           interval: parseInt(data.interval || "60"),
           timeout: parseInt(data.timeout || "30"),
-          webhook: data.webhook?.url ? {
-            url: data.webhook.url,
-            message: {
-              up: JSON.parse(data.webhook.message?.up || '{"message": "Online"}'),
-              down: JSON.parse(data.webhook.message?.down || '{"message": "Offline"}')
-            }
-          } : undefined
+          webhook: data.webhook?.url
+            ? {
+                url: data.webhook.url,
+                message: {
+                  up: JSON.parse(
+                    data.webhook.message?.up || '{"message": "Online"}'
+                  ),
+                  down: JSON.parse(
+                    data.webhook.message?.down || '{"message": "Offline"}'
+                  ),
+                },
+              }
+            : undefined,
         }),
       });
 
@@ -177,8 +219,14 @@ export default function Home() {
     if (monitor.webhook) {
       setValue("webhook.url", monitor.webhook.url);
       const message = monitor.webhook.message as any;
-      setValue("webhook.message.up", JSON.stringify(message.up || { message: "Online" }));
-      setValue("webhook.message.down", JSON.stringify(message.down || { message: "Offline" }));
+      setValue(
+        "webhook.message.up",
+        JSON.stringify(message.up || { message: "Online" })
+      );
+      setValue(
+        "webhook.message.down",
+        JSON.stringify(message.down || { message: "Offline" })
+      );
     }
     setIsEditDialogOpen(true);
   };
@@ -193,17 +241,42 @@ export default function Home() {
     setIsEventLogOpen(true);
   };
 
+  const getTimeSeriesData = (monitor: Monitor) => {
+    // Sort events by timestamp
+    const sortedEvents = [...monitor.events].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    // Get last 24 hours of data
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    const filteredEvents = sortedEvents.filter(
+      (event) => new Date(event.createdAt) > twentyFourHoursAgo
+    );
+
+    // Transform events into time series data
+    return filteredEvents.map((event) => ({
+      timestamp: new Date(event.createdAt).toLocaleTimeString(),
+      value: event.status === "UP" ? 1 : 0,
+      status: event.status,
+    }));
+  };
+
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <Navbar />
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 ">
+        <div className="mb-8">
+          <Navbar />
+        </div>
         <div className="container mx-auto px-4 py-16">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
               Website Monitoring Made Simple
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-              Monitor your websites' uptime, get instant notifications, and never miss a downtime again.
+              Monitor your websites' uptime, get instant notifications, and
+              never miss a downtime again.
             </p>
             <div className="flex gap-4 justify-center">
               <Link href="/login">
@@ -263,7 +336,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Navbar />
+      <div className="mb-8">
+          <Navbar />
+        </div>
       <div className="container mx-auto py-10 px-4">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -324,19 +399,23 @@ export default function Home() {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="webhook">Webhook Configuration (optional)</Label>
+                  <Label htmlFor="webhook">
+                    Webhook Configuration (optional)
+                  </Label>
                   <div className="space-y-4 mt-2">
                     <div>
                       <Label htmlFor="webhook-url">Webhook URL</Label>
-                      <Input 
-                        id="webhook-url" 
-                        {...register("webhook.url")} 
+                      <Input
+                        id="webhook-url"
+                        {...register("webhook.url")}
                         type="url"
                         placeholder="https://your-webhook-url.com"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="webhook-down">DOWN Event Message (JSON)</Label>
+                      <Label htmlFor="webhook-down">
+                        DOWN Event Message (JSON)
+                      </Label>
                       <Input
                         id="webhook-down"
                         {...register("webhook.message.down")}
@@ -344,7 +423,9 @@ export default function Home() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="webhook-up">UP Event Message (JSON)</Label>
+                      <Label htmlFor="webhook-up">
+                        UP Event Message (JSON)
+                      </Label>
                       <Input
                         id="webhook-up"
                         {...register("webhook.message.up")}
@@ -353,10 +434,53 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <Button type="submit" className="w-full">Create Monitor</Button>
+                <Button type="submit" className="w-full">
+                  Create Monitor
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-blue-500" />
+                Total Monitors
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{monitors.length}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wifi className="h-5 w-5 text-green-500" />
+                Online
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-500">
+                {monitors.filter((m) => m.status === "UP").length}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <WifiOff className="h-5 w-5 text-red-500" />
+                Offline
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-red-500">
+                {monitors.filter((m) => m.status === "DOWN").length}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {isLoading ? (
@@ -385,7 +509,10 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {monitors.map((monitor) => (
-              <Card key={monitor.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={monitor.id}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader className="pb-2">
                   <CardTitle className="flex items-center justify-between">
                     <span className="truncate">{monitor.name}</span>
@@ -418,21 +545,20 @@ export default function Home() {
                       )}
                     </div>
                   </CardTitle>
-                  <p className="text-sm text-gray-500 truncate">{monitor.url}</p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {monitor.url}
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[200px] mb-4">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart
-                        data={monitor.events.map((event) => ({
-                          time: new Date(event.createdAt).toLocaleTimeString(),
-                          status: event.status === "UP" ? 1 : 0,
-                        }))}
+                        data={getTimeSeriesData(monitor)}
                         margin={{ top: 5, right: 5, left: -20, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                         <XAxis
-                          dataKey="time"
+                          dataKey="timestamp"
                           tick={{ fontSize: 12 }}
                           interval="preserveStartEnd"
                         />
@@ -444,11 +570,13 @@ export default function Home() {
                             borderRadius: "4px",
                             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
                           }}
-                          formatter={(value: number) => [value === 1 ? "Up" : "Down"]}
+                          formatter={(value: number) => [
+                            value === 1 ? "Up" : "Down",
+                          ]}
                         />
                         <Line
                           type="stepAfter"
-                          dataKey="status"
+                          dataKey="value"
                           stroke="#8884d8"
                           strokeWidth={2}
                           dot={false}
@@ -535,19 +663,23 @@ export default function Home() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="webhook">Webhook Configuration (optional)</Label>
+                <Label htmlFor="webhook">
+                  Webhook Configuration (optional)
+                </Label>
                 <div className="space-y-4 mt-2">
                   <div>
                     <Label htmlFor="webhook-url">Webhook URL</Label>
-                    <Input 
-                      id="webhook-url" 
-                      {...register("webhook.url")} 
+                    <Input
+                      id="webhook-url"
+                      {...register("webhook.url")}
                       type="url"
                       placeholder="https://your-webhook-url.com"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="webhook-down">DOWN Event Message (JSON)</Label>
+                    <Label htmlFor="webhook-down">
+                      DOWN Event Message (JSON)
+                    </Label>
                     <Input
                       id="webhook-down"
                       {...register("webhook.message.down")}
@@ -564,24 +696,32 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <Button type="submit" className="w-full">Update Monitor</Button>
+              <Button type="submit" className="w-full">
+                Update Monitor
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialog
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the monitor
-                and all its associated data.
+                This action cannot be undone. This will permanently delete the
+                monitor and all its associated data.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete} className="bg-red-500 hover:bg-red-600">
+              <AlertDialogAction
+                onClick={onDelete}
+                className="bg-red-500 hover:bg-red-600"
+              >
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -609,7 +749,13 @@ export default function Home() {
                     ) : (
                       <WifiOff className="h-4 w-4 text-red-500" />
                     )}
-                    <span className={event.status === "UP" ? "text-green-500" : "text-red-500"}>
+                    <span
+                      className={
+                        event.status === "UP"
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }
+                    >
                       {event.status}
                     </span>
                   </div>

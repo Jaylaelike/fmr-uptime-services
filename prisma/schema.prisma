@@ -1,11 +1,10 @@
-// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
 }
 
 model User {
@@ -20,39 +19,39 @@ model User {
 }
 
 model Monitor {
-  id           String         @id @default(cuid())
-  name         String
-  url          String
-  interval     Int            @default(60) // in seconds
-  timeout      Int            @default(30) // in seconds
-  isActive     Boolean        @default(true)
-  lastCheck    DateTime?
-  status       Status         @default(UP)
-  userId       String
-  user         User           @relation(fields: [userId], references: [id])
-  events       Event[]
-  webhook      Webhook?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            String         @id @default(cuid())
+  name          String
+  url           String
+  interval      Int            @default(60)
+  timeout       Int            @default(30)
+  isActive      Boolean        @default(true)
+  lastCheck     DateTime?
+  status        Status         @default(UP)
+  userId        String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  events        Event[]
+  user          User           @relation(fields: [userId], references: [id])
   notifications Notification[]
+  webhook       Webhook?
 }
 
 model Event {
   id        String   @id @default(cuid())
   status    Status
   monitorId String
-  monitor   Monitor  @relation(fields: [monitorId], references: [id])
   createdAt DateTime @default(now())
+  monitor   Monitor  @relation(fields: [monitorId], references: [id])
 }
 
 model Webhook {
   id        String   @id @default(cuid())
   url       String
   monitorId String   @unique
-  monitor   Monitor  @relation(fields: [monitorId], references: [id])
   message   Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  monitor   Monitor  @relation(fields: [monitorId], references: [id])
 }
 
 model Notification {
@@ -60,11 +59,11 @@ model Notification {
   message   String
   status    Status
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   monitorId String
-  monitor   Monitor  @relation(fields: [monitorId], references: [id])
   sent      Boolean  @default(false)
   createdAt DateTime @default(now())
+  monitor   Monitor  @relation(fields: [monitorId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 enum Status {
